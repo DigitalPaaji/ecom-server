@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config()
 import express from "express";
+import type { Request, Response } from "express"
 import mongoose from "mongoose";
 import cors from "cors"
 import cookieParser from "cookie-parser"
@@ -50,6 +51,10 @@ app.use(
 );
 
 
+
+app.get("/",async(req:Request,res:Response)=>{
+  return res.json({working:"okm"})
+})
 
 //cashes ///
 
