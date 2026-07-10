@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import type { JwtPayload } from "jsonwebtoken";
 import jwt from "jsonwebtoken"
-import Admin from "../model/adminModel.ts"
+import Admin from "../model/adminModel"
 
 
 interface AdminJwtPayload extends JwtPayload {

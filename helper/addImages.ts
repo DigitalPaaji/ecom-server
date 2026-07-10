@@ -169,3 +169,51 @@ export const uploadCollection = multer({
     fileSize: 5 * 1024 * 1024, 
   },
 });
+
+
+
+
+
+
+
+
+
+
+//////////// blog
+
+
+const uploadDirBlog= path.join(process.cwd(), "uploads","blog");
+
+if (!fs.existsSync(uploadDirBlog)) {
+  fs.mkdirSync(uploadDirBlog, { recursive: true });
+}
+
+
+
+const storageBlog= multer.diskStorage({
+  destination: (_req, _file, cb) => { 
+    cb(null, uploadDirBlog);
+  },
+
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname);
+
+    // 🔐 Strong unique filename 
+    const uniqueName =
+      crypto.randomBytes(16).toString("hex") +
+      "-" +
+      Date.now() +
+      ext;
+
+    cb(null, uniqueName);
+  },
+});
+
+
+export const uploadBlogs = multer({
+  storage:storageBlog,
+
+  limits: {
+    fileSize: 5 * 1024 * 1024, 
+  },
+});

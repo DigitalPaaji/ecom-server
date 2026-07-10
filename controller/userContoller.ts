@@ -1,13 +1,13 @@
 import type { Request, Response } from "express";
-import User from "../model/userModel.ts";
-import Otp from "../model/otpModel.ts";
+import User from "../model/userModel";
+import Otp from "../model/otpModel";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import Cart from "../model/cartModel.ts";
+import Cart from "../model/cartModel";
 import mongoose from "mongoose";
-import Address from "../model/addressModel.ts";
-import redisClient from "../helper/redisServer.ts";
-import { sendOtpMail } from "../helper/sendOtpMail.ts";
+import Address from "../model/addressModel";
+import redisClient from "../helper/redisServer";
+import { sendOtpMail } from "../helper/sendOtpMail";
 import { Types } from "mongoose";
 
 
@@ -80,7 +80,7 @@ if(!user){
  user = await User.create({
 email
   })
-
+ 
 
 
 await  user.save()
@@ -235,67 +235,67 @@ return res.status(200).json({
 //   }
 // };
 
-// export const getAllUser = async (req:Request,res:Response)=>{
-//     try {
-//       const page = Math.max(1, Number(req.query.page) || 1);
-//     const limit = 15;
-//     const skip = (page - 1) * limit;
+export const getAllUser = async (req:Request,res:Response)=>{
+    try {
+      const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = 15;
+    const skip = (page - 1) * limit;
 
 
 
-//         const users = await User.find().skip(skip)
-//         .limit(limit)
-//         .sort({ createdAt: -1 }).select("-password")
-//    const userCount = await User.countDocuments()
+        const users = await User.find().skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 }).select("-password")
+   const userCount = await User.countDocuments()
 
    
-//     return res.status(200).json({
-//       success: true,
-//       page:{
-//       page,
-//       totalPages: Math.ceil(userCount / limit),
-//       totalUsers: userCount,
+    return res.status(200).json({
+      success: true,
+      page:{
+      page,
+      totalPages: Math.ceil(userCount / limit),
+      totalUsers: userCount,
       
-//       },
-//       users,
+      },
+      users,
       
-//     });
+    });
 
 
 
-//     } catch (error) {
-//      return  res.status(500).json({
-//         message:"User Not Found"
-//      })   
-//     }
-// }
+    } catch (error) {
+     return  res.status(500).json({
+        message:"User Not Found"
+     })   
+    }
+}
 
-// export const getSingleUser = async (req:Request,res:Response)=>{
-//   try {
-//     const {id} = req.params;
+export const getSingleUser = async (req:Request,res:Response)=>{
+  try {
+    const {id} = req.params;
      
-//       const user = await User.findById(id).select("-password");
+      const user = await User.findById(id).select("-password");
 
 
-//  if (!user) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
+ if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-// const cart = await Cart.find({user: user._id }).populate("product")
-//    const addresses = await Address.find({ user: user._id });
+const cart = await Cart.find({user: user._id }).populate("product")
+   const addresses = await Address.find({ user: user._id });
 
-//     return res.status(200).json({
-//       message: "User fetched successfully",
-//       user,
-//       cart,
-//       addresses,
+    return res.status(200).json({
+      message: "User fetched successfully",
+      user,
+      cart,
+      addresses,
 
-//     });
+    });
 
-//   } catch (error) {
-//      return res.status(500).json({ message: "Server error" });
-//   }
-// }
+  } catch (error) {
+     return res.status(500).json({ message: "Server error" });
+  }
+}
 
 
 
@@ -342,7 +342,5 @@ return res.status(200).json({
 //     });
 // }
 // }
-
-
 
 

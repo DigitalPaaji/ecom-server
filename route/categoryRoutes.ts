@@ -1,6 +1,6 @@
 import express from "express";
-import { createCategory, deleteCategory, getCategory } from "../controller/categoryController.ts";
-import { uploadCategory } from "../helper/addImages.ts";
+import { createCategory, deleteCategory, getCategory } from "../controller/categoryController";
+import { uploadCategory } from "../helper/addImages";
 const route = express.Router();
 
 route.post("/create",uploadCategory.single("image"),createCategory)

@@ -1,12 +1,15 @@
-import mongoose, { Document, model, Schema } from "mongoose";
+import mongoose, { Document, model, Schema, Types } from "mongoose";
 
 
 
 interface ICart extends Document{
-user:mongoose.Schema.Types.ObjectId;
-product:mongoose.Schema.Types.ObjectId;
+user:Types.ObjectId;
+product:Types.ObjectId;
 productvarient:string;
 quantity:Number;
+price:Number;
+total:Number;
+
 }
 
 
@@ -21,6 +24,7 @@ const cartSchema = new Schema<ICart>({
         ref:"products",
         required:true
     },
+    
    
      productvarient:{
         type:String,
@@ -32,7 +36,17 @@ const cartSchema = new Schema<ICart>({
       default: 1,
       min: 1, 
     },
+    price:{
+     type:Number,
+     required:true
+    },
+    total:{
+     type:Number,
+     required:true
+    }
 }, { timestamps: true });
+
+
 
 const Cart = model<ICart>("cart",cartSchema)
 

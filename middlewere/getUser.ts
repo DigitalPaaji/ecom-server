@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import type { JwtPayload } from "jsonwebtoken";
 import jwt from "jsonwebtoken"
-import User from "../model/userModel.ts";
+import User from "../model/userModel";
 
 
 interface AdminJwtPayload extends JwtPayload {
@@ -15,7 +15,7 @@ export interface RequestAuth extends Request{
 
 export const verifyUser = async (req:RequestAuth ,res:Response,next:NextFunction)=>{
     try {
-const token = req.cookies.user_auth
+const token = req.cookies.user_token
 
 
            if (!token) {
@@ -31,7 +31,7 @@ const token = req.cookies.user_auth
       return res.status(404).json({success:false, message: "Admin not found" });
     }
 
-req.user= user
+req.user= user 
      next();
 
     } catch (error) {

@@ -1,8 +1,8 @@
 import express from "express";
-import { createAdmin, editAdmin, getAdmin, loginAdmin, logoutAdmin } from "../controller/adminController.ts";
-import { verifyAdmin } from "../middlewere/getAdmin.ts";
-import { uploadBanners } from "../helper/addImages.ts";
-import { rateLimiter } from "../helper/rateLimiter.ts";
+import { createAdmin, editAdmin, getAdmin, loginAdmin, logoutAdmin } from "../controller/adminController";
+import { verifyAdmin } from "../middlewere/getAdmin";
+import { uploadBanners } from "../helper/addImages";
+import { rateLimiter } from "../helper/rateLimiter";
 const route = express.Router();
 
 route.post("/create",createAdmin)

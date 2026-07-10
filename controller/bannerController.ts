@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
-import Banners from "../model/bannersModel.ts";
-import { removeImage } from "../helper/removeImage.ts";
-import redisClient from "../helper/redisServer.ts";
+import Banners from "../model/bannersModel";
+import { removeImage } from "../helper/removeImage";
+import redisClient from "../helper/redisServer";
 
 export const createBanner = async (req: Request, res: Response) => {
   try {

@@ -2,15 +2,15 @@
 import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import Admin from "../model/adminModel.ts";
-import { removeImage } from "../helper/removeImage.ts";
+import Admin from "../model/adminModel";
+import { removeImage } from "../helper/removeImage";
 
 
 export const createAdmin = async (req: Request, res: Response) => {
   try {
     const { name, email, password } = req.body;
 
-    // ✅ Validation
+   
     if (!name || !email || !password || password.length > 25 || password.length < 5) {
       return res.status(400).json({ success: false, message: "Invalid input" });
     }
@@ -23,7 +23,7 @@ export const createAdmin = async (req: Request, res: Response) => {
       });
     }
 
-    // ✅ Check existing admin
+                   
     const alreadyExists = await Admin.findOne({ email });
     if (alreadyExists) {
       return res.status(409).json({
@@ -32,10 +32,10 @@ export const createAdmin = async (req: Request, res: Response) => {
       });
     }
 
-    // ✅ Hash password
+    
     const hashPassword = await bcrypt.hash(password, 10);
 
-    // ✅ Create admin
+ 
     await Admin.create({
       name,
       email,

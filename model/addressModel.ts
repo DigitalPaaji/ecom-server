@@ -29,23 +29,23 @@ const addressSchema = new Schema<IAddress>({
         required:true,
         trim:true,
     },
-       lastName:{
+    lastName:{
         type:String,
         trim:true,
     }, 
-      phone: {
+    phone: {
       type: String,
       required: true,
     }, 
-     pincode: {
+    pincode: {
       type: String,
       required: true,
     },
     state: {
       type: String,
       required: true,
-    },
-      city: {
+    },  
+    city: {
       type: String,
       required: true,
     },

@@ -1,7 +1,7 @@
 import express from "express";
-import { uploadBanners } from "../helper/addImages.ts";
-import { bannerForAminPAnel, createBanner, deleteBanner, getBanners, toggleBanner } from "../controller/bannerController.ts";
-import { verifyAdmin } from "../middlewere/getAdmin.ts";
+import { uploadBanners } from "../helper/addImages";
+import { bannerForAminPAnel, createBanner, deleteBanner, getBanners, toggleBanner } from "../controller/bannerController";
+import { verifyAdmin } from "../middlewere/getAdmin";
 
 const route = express.Router();
 

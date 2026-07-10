@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
-import Wishlist from "../model/wishlistModel.ts";
+import Wishlist from "../model/wishlistModel";
+import { Types } from "mongoose";
 
 
 interface UserAuth extends Request{
@@ -9,7 +10,7 @@ interface UserAuth extends Request{
 export const addToWishlist = async (req: UserAuth, res: Response) => {
   try {
     const user = req.user;
-    const productId = req.params.productId; 
+    const productId = req.params.productId as string; 
 
     if (!productId) {
       return res.status(400).json({ message: "Product ID is required" });
@@ -20,7 +21,7 @@ export const addToWishlist = async (req: UserAuth, res: Response) => {
     if (!wishlist) {
       wishlist = await Wishlist.create({
         user: user._id,
-        product: [productId],
+        product: [productId]
       });
 
       return res.status(201).json({
@@ -38,7 +39,7 @@ export const addToWishlist = async (req: UserAuth, res: Response) => {
       return res.status(400).json({ message: "Product already in wishlist" });
     }
 
-    wishlist.product.push(productId);
+    wishlist.product.push(new Types.ObjectId(productId));
     await wishlist.save();
 
     return res.status(200).json({

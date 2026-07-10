@@ -2,10 +2,10 @@ import  { Document, model, Schema } from "mongoose";
 
 
 interface IItems {
-  product:Schema.Types.ObjectId;
-  price:Number;
+  productId:Schema.Types.ObjectId;
   quantity:Number;
-}
+  variantId:string;
+} 
 
 
 interface IOrder extends Document{
@@ -34,21 +34,21 @@ const orderSchema = new Schema<IOrder>(
 
     address: {
       type: Schema.Types.ObjectId,
-      ref: "Address",
+      ref: "address",
       required: true,
     },
 
     items: [
       {
-        product: {
+        productId: {
           type: Schema.Types.ObjectId,
-          ref: "Product",
+          ref: "products",
           required: true,
         },
-        price: {
-          type: Number,
-          required: true,
-          min: 0,
+     
+        variantId:{
+          type:String,
+
         },
         quantity: {
           type: Number,
@@ -103,10 +103,10 @@ const orderSchema = new Schema<IOrder>(
       type:String,
       default:null
     }
-  },
+  }, 
   {
     timestamps: true, 
-  }
+  }  
 );
 
 const Order = model<IOrder>("Order", orderSchema);

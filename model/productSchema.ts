@@ -7,7 +7,7 @@ export interface IArrtibutes {
 
 export interface IVariant {
   sku?: string;
- 
+   _id: mongoose.Types.ObjectId;
  
   attributes?:IArrtibutes; 
   stock: number;
@@ -33,7 +33,10 @@ export interface IProduct extends Document {
   category: mongoose.Types.ObjectId; 
   tags?: string[];
   isFeatured: boolean;
+  isNewArrived: boolean;
+  isBestSaller: boolean;
   isActive: boolean;
+  thumbnail: string;
   images: string[] | [ ];
   videoUrl?: string;
   variants: IVariant[];
@@ -44,6 +47,7 @@ export interface IProduct extends Document {
 }
 
 const VariantSchema = new Schema<IVariant>({
+  
   sku: { type: String, trim: true, sparse: true },
   
   attributes: {
@@ -61,7 +65,7 @@ const VariantSchema = new Schema<IVariant>({
   images: { type: [String], default: [] },
   isActive: { type: Boolean, default: true },
   
-});
+},{_id:true});
 
 const ProductSchema: Schema<IProduct> = new Schema(
   {
@@ -93,7 +97,13 @@ const ProductSchema: Schema<IProduct> = new Schema(
     },
     tags: [String],
     isFeatured: { type: Boolean, default: false },
+    isNewArrived: { type: Boolean, default: false },
+    isBestSaller: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
+    thumbnail:{
+type: String, 
+     required:true
+    },
   images: {
     type: [String], 
     default: []     

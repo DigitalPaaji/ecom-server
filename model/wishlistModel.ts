@@ -1,9 +1,9 @@
-import { Document, model, Schema } from "mongoose";
+import { Document, model, Schema, Types } from "mongoose";
 
 
 interface IWishlist extends Document{
     user:Schema.Types.ObjectId;
-    product: Schema.Types.ObjectId[]
+    product: Types.ObjectId[]
 }
 
 

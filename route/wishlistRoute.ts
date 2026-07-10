@@ -1,6 +1,6 @@
 import express from "express";
-import { addToWishlist, removeFromWishlist } from "../controller/wishlistController.ts";
-import { verifyUser } from "../middlewere/getUser.ts";
+import { addToWishlist, removeFromWishlist } from "../controller/wishlistController";
+import { verifyUser } from "../middlewere/getUser";
 const route =  express.Router();
 
 

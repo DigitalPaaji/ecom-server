@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
-import redisClient from "../../helper/redisServer.ts";
-import Category from "../../model/categoryModel.ts";
-import Product from "../../model/productSchema.ts";
+import redisClient from "../../helper/redisServer";
+import Category from "../../model/categoryModel";
+import Product from "../../model/productSchema";
 import mongoose from "mongoose";
 
 export const getAllCategory = async (req: Request, res: Response) => {
@@ -26,7 +26,7 @@ export const getAllCategory = async (req: Request, res: Response) => {
     
         await redisClient.setEx(
             key,
-            3600, // TTL in seconds
+            3600,
             JSON.stringify(categories)
         );
 
@@ -44,13 +44,6 @@ export const getAllCategory = async (req: Request, res: Response) => {
         });
     }
 };
-
-
-
-
-
-
-
 
 export const getSingleProduct = async (
   req: Request,
@@ -83,10 +76,6 @@ export const getSingleProduct = async (
     });
   }
 };
-
-
-
-
 
 export const getProduts = async (req: Request, res: Response) => {
   try {
@@ -168,15 +157,18 @@ export const getCartProduct=async(req:Request,res:Response)=>{
 
       if (!variant) return null;
 
+         
+
+
       return {
         productId: product._id,
-        variantId: variant._id ,
+        
         name: product.name,
-        image: variant.image || product.images?.[0],
+        image: variant.images || product.images?.[0],
         price: variant.mrp,
         quantity: item.quantity,
         stock: variant.stock,
-        total: variant.mrp * item.quantity,
+        total:  Number(variant.mrp) * item.quantity,
         variant,
       };
     }).filter(Boolean); 
@@ -205,7 +197,6 @@ export const getCartProduct=async(req:Request,res:Response)=>{
     });
   }
 }
-
 
 export const getWishlistProduct = async(req:Request,res:Response)=>{
   try {
@@ -239,3 +230,7 @@ export const getWishlistProduct = async(req:Request,res:Response)=>{
     });
   }
 }
+
+
+
+

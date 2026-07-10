@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import Address from "../model/addressModel.ts";
+import Address from "../model/addressModel";
 
 
 interface UserAuth extends Request{
@@ -106,3 +106,53 @@ export const getAllAddress = async (req: UserAuth, res: Response) => {
     });
   }
 };
+
+
+export const deleteAddress = async(req: UserAuth, res: Response)=>{
+try {
+  const {id} = req.params;
+ const  user = req.user 
+
+   if (!user?._id) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized user",
+      });
+    } 
+
+  const address = await Address.findOne({_id:id,user:user._id});
+
+if(!address){
+   return res.status(404).json({
+        success: false,
+        message: "Address not found",
+      });
+}
+    const wasDefault = address.isDefault;
+
+await address.deleteOne()
+
+ if (wasDefault) {
+      const nextAddress = await Address.findOne({
+        user: user._id,
+      }).sort({ createdAt: -1 });
+
+      if (nextAddress) {
+        nextAddress.isDefault = true;
+        await nextAddress.save();
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Address deleted successfully",
+    });
+
+
+} catch (error) {
+  return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+}
+}

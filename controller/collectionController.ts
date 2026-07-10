@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
-import Collection from "../model/collectionsModel.ts";
-import Product from "../model/productSchema.ts";
+import Collection from "../model/collectionsModel";
+import Product from "../model/productSchema";
 
 
 export const createCollection = async(req:Request,res:Response)=>{
@@ -25,9 +25,9 @@ const existing = await Collection.findOne({ slug });
         message: "Collection already exists",
       });
     }
+  const file=   req?.file as Express.Multer.File
 
-
-           const image = req.file?.filename || "";
+           const image = file?.filename || "";
 
         const collection=  await  Collection.create({
             name,description,slug,image :`/uploads/collection/${image}`
@@ -142,6 +142,31 @@ export const addProduct = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+export const getSingleCollection = async (req: Request, res: Response) => {
+  try {
+    const slug = req.params.slug;
+    const collection = await Collection.find({slug}).populate([{path:"products",select:"name slug shortDescription  thumbnail category variants isFeatured"}]).lean();
+
+ if (!collection) {
+      return res.status(404).json({
+        success: false,
+        message: "Collection not found",
+      });
+    }
+
+ return res.status(200).json({
+      success: true,
+      collection,
+    });
+  } catch (error) {
+     return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+}
 
 
 

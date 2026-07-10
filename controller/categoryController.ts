@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
 import slugify from "slugify";
-import Category from "../model/categoryModel.ts";
-import { removeImage } from "../helper/removeImage.ts";
+import Category from "../model/categoryModel";
+import { removeImage } from "../helper/removeImage";
+import redisClient from "../helper/redisServer";
 
 
 
@@ -103,3 +104,47 @@ export const deleteCategory= async(req:Request,res:Response)=>{
       { success: false, message: "Failed to delete category" } );
     }
 }
+
+
+export const getCacheCat = async (
+  req: Request,
+  res: Response
+)=> {
+  try {
+    const cacheKey = "categories";
+
+    
+    const cachedData = await redisClient.get(cacheKey);
+
+    if (cachedData) {
+      return res.status(200).json({
+        success: true,
+        cached: true,
+        categories: JSON.parse(cachedData),
+      });
+    }
+
+    // Fetch from MongoDB
+    const categories = await Category.find()
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Cache for 5 minutes
+    await redisClient.set(cacheKey, JSON.stringify(categories), {
+      EX: 300,
+    });
+
+    return res.status(200).json({
+      success: true,
+      cached: false,
+      categories,
+    });
+  } catch (error) {
+    console.error("Get categories error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch categories",
+    });
+  }
+};
