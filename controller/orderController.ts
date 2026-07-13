@@ -6,6 +6,7 @@ import dotenv from "dotenv"
 import mongoose from "mongoose";
 import Cart from "../model/cartModel";
 import User from "../model/userModel";
+import { sendNewOrderEmail } from "../helper/sendProduct";
 dotenv.config()
 
 interface AuthRequest extends Request {
@@ -132,11 +133,14 @@ const userid = req.user._id
       });
     }
 
-  await Order.findByIdAndUpdate(orderId, {
+ const order= await Order.findByIdAndUpdate(orderId, {
         paymentStatus: "Paid",
         paymentMethod: "Online",
        
-      });
+      }, {
+    new: true,
+    runValidators: true,
+  }).populate("address").populate({path:"items.productId"});
 if(ordertype=="cart"){
 
   await Cart.deleteMany({user:userid})
@@ -144,7 +148,7 @@ if(ordertype=="cart"){
 }
 
 
-
+await sendNewOrderEmail(order as any,req.user.email as string)
 
  return res.status(200).json({
       success: true,

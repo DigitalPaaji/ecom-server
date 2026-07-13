@@ -139,10 +139,10 @@ const existingUser = await User.findOne({ email }).select("_id");
      await redisClient.del(redisKey);
     await redisClient.del(`otp:cooldown:${email}`);
 
-  const password_PEPPER = process.env.PASSWORD_PEPPER! as string;
+  
   const SALT_ROUNDS = 10;
-  const passwordWithPepper = `${password}${password_PEPPER}`;
-  const hashpassword = await bcript.hash(passwordWithPepper,SALT_ROUNDS)
+  
+  const hashpassword = await bcript.hash(password,SALT_ROUNDS)
    
      const user= await User.create({email,password:hashpassword,name})
 
@@ -187,12 +187,10 @@ try {
       });
     }
 
-    const passwordPepper = process.env.PASSWORD_PEPPER!;
+    
     const jwtSecret = process.env.JWT_SECRET;
 
-    if (!passwordPepper) {
-      throw new Error("PASSWORD_PEPPER is not configured");
-    }
+    
 
     if (!jwtSecret) {
       throw new Error("JWT_SECRET is not configured");
@@ -209,10 +207,8 @@ try {
       });
     }
 
-    const passwordWithPepper = `${password}${passwordPepper}`;
-
     const isPasswordCorrect = await bcript.compare(
-      passwordWithPepper,
+      password,
       user.password
     );
     if (!isPasswordCorrect) {

@@ -15,6 +15,7 @@ import userRoutes from "./route/userRoutes"
 import videoRoutes from "./route/videoRoutes"
 import blogRoutes from "./route/blogsRoutes"
 import ReviewRoutes from "./route/reviewRoutes"
+import CouponRoutes from "./route/CouponRoutes"
 import cartRoutes from "./route/user/cartRoutes"
 import addressRoutes from "./route/addressRoutes"
 import collectionRoutes from "./route/collectionRoutes"
@@ -71,6 +72,7 @@ app.use("/api/v1/user",userRoutes)
 app.use("/api/v1/video",videoRoutes)
 app.use("/api/v1/blog",blogRoutes)
 app.use("/api/v1/review",ReviewRoutes)
+app.use("/api/v1/coupon",CouponRoutes)
 
 
 
