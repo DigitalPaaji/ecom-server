@@ -57,7 +57,8 @@ app.get("/",async(req:Request,res:Response)=>{
   return res.json({working:"okm"})
 })
 
-//cashes ///
+//caches   ///
+
 
 app.use("/api/v1/cache",cacheRotes)
 
@@ -89,7 +90,7 @@ app.use("/api/v1/address",addressRoutes)
 app.use("/api/v1/collection",collectionRoutes)
 app.use("/api/v1/order",OrderRoutes)
 
- 
+
 
 
 
@@ -135,11 +136,11 @@ updateViewerCount(currentPage as string);
 })
 socket.on('disconnect', () => {
     if (currentPage) {
-      updateViewerCount(currentPage);
+      updateViewerCount(currentPage);[]
     }
   });
   function updateViewerCount(pageId: string) {
-    // Get the number of users in the room (or default to 0)
+
     const viewers = io.sockets.adapter.rooms.get(pageId)?.size || 0;
     
     // Broadcast the count ONLY to people in that specific room
