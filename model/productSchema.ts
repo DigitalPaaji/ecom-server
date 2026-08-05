@@ -36,6 +36,7 @@ export interface IProduct extends Document {
   isNewArrived: boolean;
   isBestSaller: boolean;
   isActive: boolean;
+  isTop:boolean;
   thumbnail: string;
   images: string[] | [ ];
   videoUrl?: string;
@@ -100,6 +101,7 @@ const ProductSchema: Schema<IProduct> = new Schema(
     isNewArrived: { type: Boolean, default: false },
     isBestSaller: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
+    isTop: { type: Boolean, default: false },
     thumbnail:{
 type: String, 
      required:true

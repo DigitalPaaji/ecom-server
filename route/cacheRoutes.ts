@@ -1,6 +1,6 @@
 import express from "express";
 import { getCacheCat } from "../controller/categoryController";
-import { getBestSellerProduct, getFeaturedProduct, getProductbycat, getProducts, getSingleProduct, SearchProduct } from "../controller/productController";
+import { getBestSellerProduct, getFeaturedProduct, getProductbycat, getProducts, getProductTop, getSingleProduct, SearchProduct } from "../controller/productController";
 import { getRandomVideo } from "../controller/VideoController";
 import { getallBlogsUser, getBlogs, getSingleBlog } from "../controller/blogController";
 import { getReviews } from "../controller/ReviewController";
@@ -17,7 +17,7 @@ routes.get("/product/single/:slug",getSingleProduct)
 routes.get("/product/category/:categoryid",getProductbycat)
 routes.get("/product/get",getProducts)
 routes.get("/product/search/:search",SearchProduct)
-
+routes.get("/productstop",getProductTop)
 
 routes.get("/videos/random",getRandomVideo)
 routes.get("/blogs/random",getBlogs)

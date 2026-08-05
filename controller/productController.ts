@@ -18,6 +18,7 @@ export const createProduct = async (req: Request, res: Response) => {
      isBestSaller,
       isFeatured,
       isNewArrived,
+      isTop,
       variants,
       tags,
       seo,
@@ -86,6 +87,7 @@ export const createProduct = async (req: Request, res: Response) => {
       isFeatured,
       isBestSaller,
       isNewArrived,
+      isTop,
       variants:JSON.parse(variants),
       details:getdetails
     });
@@ -246,7 +248,7 @@ try {
 
   }
 
-  const {name,description,shortDescription,category,tags,isFeatured,isNewArrived,isBestSaller,isActive,seo,deleteImg,details,variants} = req.body;
+  const {name,isTop,description,shortDescription,category,tags,isFeatured,isNewArrived,isBestSaller,isActive,seo,deleteImg,details,variants} = req.body;
 
     const parsedSeo = seo ? JSON.parse(seo) : {};
     const parsedTags = tags ? JSON.parse(tags) : [];
@@ -260,6 +262,7 @@ try {
     product.isFeatured = isFeatured ?? product.isFeatured;
     product.isNewArrived = isNewArrived ?? product.isNewArrived;
     product.isBestSaller = isBestSaller ?? product.isBestSaller;
+    product.isTop = isTop ?? product.isTop;
     product.isActive = isActive ?? product.isActive;
     product.tags = parsedTags;
     product.details = parseddetails;
@@ -560,7 +563,48 @@ export const getProductbycat=async(req:Request,res:Response)=>{
   }
 }
 
+export const getProductTop=async(req:Request,res:Response)=>{
+ try {
+  const key = "istop";
 
+    // Check cached products
+    const cachedProducts = await redisClient.get(key);
+
+    if (cachedProducts) {
+      return res.status(200).json({
+        success: true,
+       
+        products: JSON.parse(cachedProducts),
+      });
+    }
+
+    // Fetch from database
+    const products = await Product.find({
+      isActive: true,
+      isTop: true,
+    }).select(" variants name  thumbnail slug shortDescription ")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Cache for 5 minutes
+    await redisClient.set(key, JSON.stringify(products), {
+      EX: 300,
+    });
+
+    return res.status(200).json({
+      success: true,
+   
+      products,
+    });
+  } catch (error) {
+    console.error("Get Featured products error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch Featured products",
+    });
+  }
+}
 
 
 type ProductSort =

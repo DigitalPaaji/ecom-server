@@ -12,6 +12,7 @@ route.get("/category",getAllCategory)
 
 route.get("/product/:slug",getSingleProduct)
 route.get("/products",getProduts)
+
 route.post("/getcart_product",getCartProduct)
 route.post("/getwishlist_product",getWishlistProduct)
 
