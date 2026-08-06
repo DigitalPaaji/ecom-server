@@ -22,6 +22,7 @@ export const createProduct = async (req: Request, res: Response) => {
       variants,
       tags,
       seo,
+      isTopImage,
       details
     } = req.body;
 
@@ -88,6 +89,7 @@ export const createProduct = async (req: Request, res: Response) => {
       isBestSaller,
       isNewArrived,
       isTop,
+      isTopImage:isTopImage || null,
       variants:JSON.parse(variants),
       details:getdetails
     });
@@ -248,7 +250,7 @@ try {
 
   }
 
-  const {name,isTop,description,shortDescription,category,tags,isFeatured,isNewArrived,isBestSaller,isActive,seo,deleteImg,details,variants} = req.body;
+  const {name,isTop,isTopImage,description,shortDescription,category,tags,isFeatured,isNewArrived,isBestSaller,isActive,seo,deleteImg,details,variants} = req.body;
 
     const parsedSeo = seo ? JSON.parse(seo) : {};
     const parsedTags = tags ? JSON.parse(tags) : [];
@@ -263,6 +265,8 @@ try {
     product.isNewArrived = isNewArrived ?? product.isNewArrived;
     product.isBestSaller = isBestSaller ?? product.isBestSaller;
     product.isTop = isTop ?? product.isTop;
+    product.isTopImage = Number(isTopImage)  || null;
+
     product.isActive = isActive ?? product.isActive;
     product.tags = parsedTags;
     product.details = parseddetails;
@@ -399,7 +403,7 @@ try {
         products: [],
       });
     }
-  const product = await  Product.find({  _id: { $in: wishlist }}).select("name slug shortDescription category thumbnail").populate("category")
+  const product = await  Product.find({  _id: { $in: wishlist }}).select(" variants name  thumbnail slug")
 
 return res.status(200).json({
       success: true,
@@ -582,7 +586,7 @@ export const getProductTop=async(req:Request,res:Response)=>{
     const products = await Product.find({
       isActive: true,
       isTop: true,
-    }).select(" variants name  thumbnail slug shortDescription ")
+    }).select(" variants name  thumbnail slug shortDescription  images isTopImage")
       .sort({ createdAt: -1 })
       .lean();
 

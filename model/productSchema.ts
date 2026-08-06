@@ -37,6 +37,7 @@ export interface IProduct extends Document {
   isBestSaller: boolean;
   isActive: boolean;
   isTop:boolean;
+  isTopImage:Number | null;
   thumbnail: string;
   images: string[] | [ ];
   videoUrl?: string;
@@ -102,6 +103,7 @@ const ProductSchema: Schema<IProduct> = new Schema(
     isBestSaller: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     isTop: { type: Boolean, default: false },
+    isTopImage: { type: Number, default: null },
     thumbnail:{
 type: String, 
      required:true
