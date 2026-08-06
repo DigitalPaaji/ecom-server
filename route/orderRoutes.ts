@@ -1,11 +1,12 @@
 import express from "express";
-import { ChangeStatus, createOrder, GetMyOrder, getOrders, getSingleOrder, verifyRazorpayPayment } from "../controller/orderController";
+import { ChangeStatus, createOrder, GetMyOrder, GetOrderDetails, getOrders, getSingleOrder, verifyRazorpayPayment } from "../controller/orderController";
 import { verifyAdmin } from "../middlewere/getAdmin";
 import { verifyUser } from "../middlewere/getUser";
 const route = express.Router(); 
 
 
 route.get("/getall",verifyAdmin as any,getOrders)
+route.get("/get/details",verifyAdmin as any,GetOrderDetails)
 route.get("/get/:id",verifyAdmin as any,getSingleOrder)
 route.patch("/update/:id",verifyAdmin as any,ChangeStatus)
 route.post("/create",verifyUser as any,createOrder as any)
