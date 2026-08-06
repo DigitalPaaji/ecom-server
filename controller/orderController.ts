@@ -1,28 +1,26 @@
 import type { Request, Response } from "express";
 import Order from "../model/orderModel";
-import Razorpay from "razorpay"
-import crypto from "crypto"
-import dotenv from "dotenv"
+import Razorpay from "razorpay";
+import crypto from "crypto";
+import dotenv from "dotenv";
 import mongoose from "mongoose";
 import Cart from "../model/cartModel";
 import User from "../model/userModel";
 import { sendNewOrderEmail } from "../helper/sendProduct";
-dotenv.config()
+dotenv.config();
 
 interface AuthRequest extends Request {
   user: any;
 }
- const razorpay = new Razorpay({
+const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID as string,
   key_secret: process.env.RAZORPAY_KEY_SECRET as string,
 });
 
-
-
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user;
-    
+
     const { address, price, discount, totalPrice, items } = req.body;
     if (!totalPrice || totalPrice <= 0) {
       return res.status(400).json({
@@ -31,10 +29,10 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       });
     }
 
-        const amountInPaise = Math.round(Number(totalPrice) * 100);
-         const receipt = `receipt_${Date.now()}`;
+    const amountInPaise = Math.round(Number(totalPrice) * 100);
+    const receipt = `receipt_${Date.now()}`;
 
-      const razorpayOrder = await razorpay.orders.create({
+    const razorpayOrder = await razorpay.orders.create({
       amount: amountInPaise,
       currency: "INR",
       receipt,
@@ -43,62 +41,52 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       },
     });
 
-
-
     const order = await Order.create({
       user: user._id,
       address: address,
       items,
-      paymentMethod:"Online",
+      paymentMethod: "Online",
       price,
       discount,
       totalPrice,
     });
 
-
-
-
-     return res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: " order created successfully",
       key: process.env.RAZORPAY_KEY_ID,
       order: {
-       id: razorpayOrder.id,
+        id: razorpayOrder.id,
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
-       
       },
-       orderId: order._id,
-      
+      orderId: order._id,
     });
-
-
-
   } catch (error) {
-    console.log(error)
-  return res.status(500).json({
-    success:false,
-    message:error
-  })
-    
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: error,
+    });
   }
 };
 
-
-export const verifyRazorpayPayment = async(req: AuthRequest, res: Response)=>{
-try {
-  
+export const verifyRazorpayPayment = async (
+  req: AuthRequest,
+  res: Response,
+) => {
+  try {
     const {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
       orderId,
-      ordertype
+      ordertype,
     } = req.body;
 
-const userid = req.user._id
+    const userid = req.user._id;
 
- if (
+    if (
       !razorpay_order_id ||
       !razorpay_payment_id ||
       !razorpay_signature ||
@@ -110,19 +98,14 @@ const userid = req.user._id
       });
     }
 
-
-     const generatedSignature = crypto
-      .createHmac(
-        "sha256",
-        process.env.RAZORPAY_KEY_SECRET as string
-      )
+    const generatedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET as string)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
-      const isPaymentValid =
-      generatedSignature === razorpay_signature;
+    const isPaymentValid = generatedSignature === razorpay_signature;
 
-  if (!isPaymentValid) {
+    if (!isPaymentValid) {
       await Order.findByIdAndUpdate(orderId, {
         paymentStatus: "failed",
       });
@@ -133,75 +116,71 @@ const userid = req.user._id
       });
     }
 
- const order= await Order.findByIdAndUpdate(orderId, {
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      {
         paymentStatus: "Paid",
         paymentMethod: "Online",
-       
-      }, {
-    new: true,
-    runValidators: true,
-  }).populate("address").populate({path:"items.productId"});
-if(ordertype=="cart"){
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    )
+      .populate("address")
+      .populate({ path: "items.productId" });
+    if (ordertype == "cart") {
+      await Cart.deleteMany({ user: userid });
+      await User.findByIdAndUpdate(userid, { cartCount: 0 });
+    }
 
-  await Cart.deleteMany({user:userid})
-  await User.findByIdAndUpdate(userid,{cartCount:0})
-}
+    await sendNewOrderEmail(order as any, req.user.email as string);
 
-
-await sendNewOrderEmail(order as any,req.user.email as string)
-
- return res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Payment verified successfully",
-      
     });
-
-} catch (error) {
+  } catch (error) {
     return res.status(500).json({
-    success:false,
-    message:error
-  })
-}
-}
+      success: false,
+      message: error,
+    });
+  }
+};
 
-  export const GetMyOrder= async(req: AuthRequest, res: Response)=>{
+export const GetMyOrder = async (req: AuthRequest, res: Response) => {
   try {
-    const user= req.user;
-        if (!user?._id) {
+    const user = req.user;
+    if (!user?._id) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized user",
       });
     }
- const orders = await Order.find({ user: user._id })
+    const orders = await Order.find({ user: user._id })
       .populate({
         path: "address",
       })
       .populate({
         path: "items.productId",
-        select:"name shortDescription slug thumbnail variants"
+        select: "name shortDescription slug thumbnail variants",
       })
       .sort({ createdAt: -1 });
 
-return res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Orders fetched successfully",
       count: orders.length,
       orders,
     });
-
   } catch (error) {
-   console.log(error)
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
     });
   }
-  }
-
-
-
-
+};
 
 export const GetOrderDetails = async (req: Request, res: Response) => {
   try {
@@ -209,106 +188,98 @@ export const GetOrderDetails = async (req: Request, res: Response) => {
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
-const monthlyOrderChart = Order.aggregate([
-  {
-    $group: {
-      _id: {
-        year: { $year: "$createdAt" },
-        month: { $month: "$createdAt" },
-      },
-      orders: { $sum: 1 },
-      paidOrders: {
-        $sum: {
-          $cond: [
-            { $eq: ["$paymentStatus", "Paid"] },
-            1,
-            0,
-          ],
+    const monthlyOrderChart = Order.aggregate([
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" },
+          },
+          orders: { $sum: 1 },
+          paidOrders: {
+            $sum: {
+              $cond: [{ $eq: ["$paymentStatus", "Paid"] }, 1, 0],
+            },
+          },
+          revenue: { $sum: "$totalPrice" },
+          paidRevenue: {
+            $sum: {
+              $cond: [{ $eq: ["$paymentStatus", "Paid"] }, "$totalPrice", 0],
+            },
+          },
         },
       },
-      revenue: { $sum: "$totalPrice" },
-      paidRevenue: {
-        $sum: {
-          $cond: [
-            { $eq: ["$paymentStatus", "Paid"] },
-            "$totalPrice",
-            0,
-          ],
+      {
+        $sort: {
+          "_id.year": 1,
+          "_id.month": 1,
         },
       },
-    },
-  },
-  {
-    $sort: {
-      "_id.year": 1,
-      "_id.month": 1,
-    },
-  },
-]);
-   const [
-  totalOrders,
-  paidOrders,
-  monthlyOrders,
-  monthlyPaidOrders,
-  totalSalesAgg,
-  paidSalesAgg,
-  latestOrders,
-  monthlyOrdersChart,
-] = await Promise.all([
-  Order.countDocuments(),
-  Order.countDocuments({ paymentStatus: "Paid" }),
+    ]);
+    const [
+      totalOrders,
+      paidOrders,
+      monthlyOrders,
+      monthlyPaidOrders,
+      totalSalesAgg,
+      paidSalesAgg,
+      latestOrders,
+      monthlyOrdersChart,
+    ] = await Promise.all([
+      Order.countDocuments(),
+      Order.countDocuments({ paymentStatus: "Paid" }),
 
-  Order.countDocuments({
-    createdAt: { $gte: startOfMonth },
-  }),
+      Order.countDocuments({
+        createdAt: { $gte: startOfMonth },
+      }),
 
-  Order.countDocuments({
-    paymentStatus: "Paid",
-    createdAt: { $gte: startOfMonth },
-  }),
+      Order.countDocuments({
+        paymentStatus: "Paid",
+        createdAt: { $gte: startOfMonth },
+      }),
 
-  Order.aggregate([
-    {
-      $group: {
-        _id: null,
-        total: { $sum: "$totalPrice" },
-      },
-    },
-  ]),
+      Order.aggregate([
+        {
+          $group: {
+            _id: null,
+            total: { $sum: "$totalPrice" },
+          },
+        },
+      ]),
 
-  Order.aggregate([
-    {
-      $match: { paymentStatus: "Paid" },
-    },
-    {
-      $group: {
-        _id: null,
-        total: { $sum: "$totalPrice" },
-      },
-    },
-  ]),
+      Order.aggregate([
+        {
+          $match: { paymentStatus: "Paid" },
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: "$totalPrice" },
+          },
+        },
+      ]),
 
-  Order.find()
-    .sort({ createdAt: -1 })
-    .limit(10)
-    .populate("user", "name email")
-    .populate("address")
-    .lean(),
+      Order.find()
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .populate("user", "name email")
+        .populate("address")
+        .lean(),
 
-  monthlyOrderChart,
-]);
+      monthlyOrderChart,
+    ]);
 
     return res.status(200).json({
       success: true,
       data: {
-     totalOrders,
-    paidOrders,
-    monthlyOrders,
-    monthlyPaidOrders,
-    totalSales: totalSalesAgg[0]?.total ?? 0,
-    paidSales: paidSalesAgg[0]?.total ?? 0,
-    latestOrders,
-    monthlyOrdersChart,
+        totalOrders,
+        paidOrders,
+        monthlyOrders,
+        monthlyPaidOrders,
+        totalSales: totalSalesAgg[0]?.total ?? 0,
+        paidSales: paidSalesAgg[0]?.total ?? 0,
+        latestOrders,
+        monthlyOrdersChart,
       },
     });
   } catch (error: any) {
@@ -321,8 +292,6 @@ const monthlyOrderChart = Order.aggregate([
     });
   }
 };
-
-
 
 // export const Addtrackid = async (req: Request, res: Response) => {
 //   try {
@@ -391,11 +360,9 @@ const monthlyOrderChart = Order.aggregate([
 //       return res.status(500).json({
 //       success: false,
 //       message: "Server Error",
-//     });  
+//     });
 //     }
 // }
-
-
 
 export const getOrders = async (req: Request, res: Response) => {
   try {
@@ -435,14 +402,17 @@ export const getOrders = async (req: Request, res: Response) => {
       };
     }
 
-
-    const orders = await Order.find(filter).populate([ {path:"items.productId",select:"name slug thumbnail variants"},{path:"address"}]).sort({ createdAt: -1 });
+    const orders = await Order.find(filter)
+      .populate([
+        { path: "items.productId", select: "name slug thumbnail variants" },
+        { path: "address" },
+      ])
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
       orders,
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -451,81 +421,95 @@ export const getOrders = async (req: Request, res: Response) => {
     });
   }
 };
-export const getSingleOrder= async(req:Request,res:Response)=>{
+export const getSingleOrder = async (req: Request, res: Response) => {
   try {
-    const {id} = req.params;
- 
-    const order = await Order.findById(id).populate([{path:"address"},{path:"items.productId",select:"name slug  shortDescription thumbnail variants"}])
+    const { id } = req.params;
 
-   if (!order) {
+    const order = await Order.findById(id).populate([
+      { path: "address" },
+      {
+        path: "items.productId",
+        select: "name slug  shortDescription thumbnail variants",
+      },
+    ]);
+
+    if (!order) {
       return res.status(404).json({
         success: false,
         message: "Order not found",
       });
     }
-  return res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Order fetched successfully",
       order,
     });
-
-
-
-
-
   } catch (error) {
     return res.status(500).json({
-      success:false,
-      message:error
-    })
+      success: false,
+      message: error,
+    });
   }
-}
+};
 
-export const ChangeStatus = async(req:Request,res:Response)=>{
+export const ChangeStatus = async (req: Request, res: Response) => {
   try {
-    const {id}= req.params;
-   const {type,data}= req.body;
-const order = await Order.findById(id);
+    const { id } = req.params;
+    const { type, data } = req.body;
+    const order = await Order.findById(id);
 
-if(!order){
- return res.status(404).json({
+    if (!order) {
+      return res.status(404).json({
         success: false,
         message: "Order not found",
       });
-}
+    }
 
+    switch (type) {
+      case "orderStatus":
+        order.orderStatus = data;
+        break;
+      case "paymentStatus":
+        order.paymentStatus = data;
+        break;
+      case "trackingId":
+        order.trackingId = data;
+        break;
 
+      default:
+        break;
+    }
 
+    await order.save();
 
-switch (type) {
-  case "orderStatus":
-    order.orderStatus= data
-    break;
-    case "paymentStatus":      
-      order.paymentStatus= data
-     break;
- case "trackingId":      
-      order.trackingId= data
-     break;
-
-  default:
-    break;
-}
-
-await order.save();
-
-
-
- return res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Order updated successfully",
       order,
     });
-
-
   } catch (error) {
     return res.status(500).json({
-      success:false,mesage:error
-    })
+      success: false,
+      mesage: error,
+    });
+  }
+};
+
+export const DeleteOrder = async (req: Request, res: Response) =>  {
+  try{
+const orderID = req.params.id;
+await Order.findByIdAndDelete(orderID);
+
+return res.status(200).json({
+  success:true,
+  message:"Order Deleted"
+})
+
+
+  }
+  catch(error){
+return res.status(500).json({
+  success:false,message:error
+})
   }
 }
