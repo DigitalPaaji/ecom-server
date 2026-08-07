@@ -204,7 +204,12 @@ export const  getAllCartitem = async (req: UserAuth, res: Response) => {
 
  
      if (cartItems.length === 0) {
-  return;
+return res.status(200).json({
+        message: "Cart is empty",
+        count: 0,
+        grandTotal: 0,
+        cartItems: [],
+      });
 }
 
 
