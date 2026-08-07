@@ -987,3 +987,49 @@ export const getProducts = async (
   }
 };
 
+
+
+export const getRandomProduct = async ( req: Request,res: Response)=>{
+try{
+
+const key = "randomproducts";
+
+    // Check Redis cache
+    const cacheProduct = await redisClient.get(key);
+
+    if (cacheProduct) {
+      return res.status(200).json({
+        success: true,
+        products: JSON.parse(cacheProduct),
+      });
+    }
+   const products = await Product.aggregate([
+      { $sample: { size: 20 } },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          slug: 1,
+        },
+      },
+    ]);
+ await redisClient.setEx(
+      key,
+      600,
+      JSON.stringify(products)
+    );
+
+
+  return res.status(200).json({
+      success: true,
+      products,
+    });
+
+}
+catch(error){
+ return res.status(500).json({
+      success: false,
+      message: "Failed to get random products",
+    });
+}
+} 
