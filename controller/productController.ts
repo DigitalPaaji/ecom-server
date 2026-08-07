@@ -89,7 +89,7 @@ export const createProduct = async (req: Request, res: Response) => {
       isBestSaller,
       isNewArrived,
       isTop,
-      isTopImage:isTopImage || null,
+      isTopImage:Number(isTopImage)  || null  ,
       variants:JSON.parse(variants),
       details:getdetails
     });
