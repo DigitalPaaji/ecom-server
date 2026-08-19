@@ -113,7 +113,7 @@ findCaegory.product.push(product._id as Types.ObjectId);
     console.error("Create Product Error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
-}; 
+};  
 
 export const getProduts = async (req: Request, res: Response) => {
   try {
@@ -121,29 +121,61 @@ export const getProduts = async (req: Request, res: Response) => {
     const limit = 15;
     const skip = (page - 1) * limit;
 
+    const search = String(req.query.search || "").trim();
+
+    // Search filter
+    const filter: any = {};
+
+    if (search) {
+      filter.$or = [
+        {
+          name: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          slug: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          shortDescription: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+      ];
+    }
+
     const [products, total] = await Promise.all([
-      Product.find()
+      Product.find(filter)
         .skip(skip)
         .limit(limit)
-        .sort({ createdAt: -1 }).select("name slug shortDescription  thumbnail category variants isFeatured").populate("category"),
+        .sort({ createdAt: -1 })
+        .select(
+          "name slug shortDescription thumbnail category variants isFeatured"
+        )
+        .populate("category"),
 
-      Product.countDocuments()
+      // Important: use the same filter here
+      Product.countDocuments(filter),
     ]);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      page:{
-      page,
-      totalPages: Math.ceil(total / limit),
-      totalProducts: total,
-      
+      page: {
+        page,
+        totalPages: Math.ceil(total / limit),
+        totalProducts: total,
       },
       products,
-      
     });
-
   } catch (error) {
-    res.status(500).json({
+    console.error("Get products error:", error);
+
+    return res.status(500).json({
       success: false,
       message: "Failed to fetch products",
     });
