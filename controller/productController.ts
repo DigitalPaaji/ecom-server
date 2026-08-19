@@ -379,7 +379,7 @@ product.category= category;
 
 
 export const SearchProduct = async(req: Request, res: Response)=>{
-try {
+try {  
   const search = String(req.params.search).trim();
 
 if (!search) {
@@ -392,6 +392,28 @@ if (!search) {
     const safeSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 
+//  if (search) {
+//       filter.$or = [
+//         {
+//           name: {
+//             $regex: search,
+//             $options: "i",
+//           },
+//         },
+//         {
+//           slug: {
+//             $regex: search,
+//             $options: "i",
+//           },
+//         },
+//         {
+//           shortDescription: {
+//             $regex: search,
+//             $options: "i",
+//           },
+//         },
+//       ];
+//     }
 
 const products = await Product.find({
   isActive: true,
@@ -399,6 +421,14 @@ const products = await Product.find({
     $regex: safeSearch,
     $options: "i",
   },
+   shortDescription: {
+            $regex: safeSearch,
+            $options: "i",
+          },
+   slug: {
+            $regex: safeSearch,
+            $options: "i",
+          },
 }).select("name slug thumbnail").sort({ createdAt: -1 })
       .limit(10)
       .lean();;
@@ -649,7 +679,8 @@ type ProductSort =
   | "name-asc"
   | "name-desc"
   | "price-low"
-  | "price-high";
+  | "price-high"
+  |"bestseller"
 
 const getQueryString = (value: unknown): string => {
   if (typeof value === "string") {
@@ -699,6 +730,7 @@ export const getProducts = async (
       "name-desc",
       "price-low",
       "price-high",
+      "bestseller",
     ];
 
     const sort: ProductSort = allowedSorts.includes(
@@ -813,6 +845,7 @@ export const getProducts = async (
       createdAt: -1,
       _id: -1,
     };
+  
 
     switch (sort) {
       case "oldest":
@@ -849,6 +882,9 @@ export const getProducts = async (
           createdAt: -1,
         };
         break;
+         case "bestseller":
+       productMatch.isBestSaller=true
+        break;
 
       case "newest":
       default:
@@ -858,7 +894,7 @@ export const getProducts = async (
         };
         break;
     }
-
+// isBestSaller
     /*
      * Aggregation pipeline
      */
