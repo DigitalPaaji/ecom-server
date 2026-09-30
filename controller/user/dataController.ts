@@ -21,7 +21,7 @@ export const getAllCategory = async (req: Request, res: Response) => {
         }
 
      
-        const categories = await Category.find().sort({ createdAt: -1 });
+        const categories = await Category.find().sort({ name: 1 });
 
     
         await redisClient.setEx(
@@ -93,7 +93,7 @@ filter.category = req.query.category;
       Product.find(filter)
         .skip(skip)
         .limit(limit)
-        .sort({ createdAt: -1 }).select("name slug shortDescription  images category variants isFeatured").populate("category"),
+        .sort({ updatedAt: 1 }).select("name slug shortDescription  images category variants isFeatured").populate("category"),
 
       Product.countDocuments()
     ]);
