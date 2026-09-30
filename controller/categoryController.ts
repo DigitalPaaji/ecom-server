@@ -7,17 +7,30 @@ import redisClient from "../helper/redisServer";
 
 
 export const createCategory = async (req:Request,res:Response) => {
+  const files = req.files as {
+  [fieldname: string]: Express.Multer.File[];
+};
+
+const image = `/uploads/category/${files?.image?.[0]?.filename}`;
+const desktop =  `/uploads/category/${files?.desktop?.[0]?.filename}`;
+const mobile =  `/uploads/category/${files?.mobile?.[0]?.filename}`;
   try {
     const {name} = await req.body;
-  const image = req.file?.filename
+  
 
    
 
     if (!name) {
+      image && await removeImage({imgpath:image})
+    desktop && await removeImage({imgpath:desktop})
+    mobile && await removeImage({imgpath:mobile})
       return res.status(400).json({ success: false, message: "Category name is required" });
     }
 
     if (!image) {
+    
+    desktop && await removeImage({imgpath:desktop})
+    mobile && await removeImage({imgpath:mobile})
       return res.status(400).json({ success: false, message: "Category image is required" });
     }
 
@@ -26,6 +39,9 @@ export const createCategory = async (req:Request,res:Response) => {
   
     const alreadyCategory = await Category.findOne({ name });
     if (alreadyCategory) {
+      image && await removeImage({imgpath:image})
+    desktop && await removeImage({imgpath:desktop})
+    mobile && await removeImage({imgpath:mobile})
       return res.status(409).json(
         { success: false, message: "Category already exists" } );
     }
@@ -35,8 +51,11 @@ export const createCategory = async (req:Request,res:Response) => {
 
     const category = await Category.create({
       name,
-      image:`/uploads/category/${image}`,
+      image:image,
+      desktop:desktop,
+      mobile:mobile,
       slug,
+   
     });
 
     return res.status(201).json({
@@ -46,7 +65,11 @@ export const createCategory = async (req:Request,res:Response) => {
     });
 
   } catch (error: any) {
-    console.error(error);
+    image && await removeImage({imgpath:image})
+    desktop && await removeImage({imgpath:desktop})
+    mobile && await removeImage({imgpath:mobile})
+
+
     return res.status(500).json(
       { success: false, message: "Internal server error" });
   }
@@ -91,6 +114,12 @@ export const deleteCategory= async(req:Request,res:Response)=>{
 
         if(category.image){
             await removeImage({imgpath:category.image})
+        }
+        if(category.desktop){
+            await removeImage({imgpath:category.desktop})
+        }
+        if(category.mobile){
+            await removeImage({imgpath:category.mobile})
         }
         await category.deleteOne()
    return res.status(200).json({
@@ -149,11 +178,10 @@ export const getCacheCat = async (
   }
 };
 
-export const EditCategory = async(req:Request,res:Response)=>{
-  const file = req.file as Express.Multer.File | undefined;
-  const newImage = file?.filename
-    ? `/uploads/category/${file.filename}`
-    : null;
+export const EditCategory = async (req: Request, res: Response) => {
+  const files = req.files as {
+    [fieldname: string]: Express.Multer.File[];
+  };
 
   try {
     const { id } = req.params;
@@ -161,10 +189,24 @@ export const EditCategory = async(req:Request,res:Response)=>{
 
     const category = await Category.findById(id);
 
+    // If category doesn't exist, remove all newly uploaded files
     if (!category) {
-      // Remove newly uploaded image if category does not exist
-      if (newImage) {
-        await removeImage({ imgpath: newImage });
+      if (files?.newimage?.[0]?.filename) {
+        await removeImage({
+          imgpath: `/uploads/category/${files.newimage[0].filename}`,
+        });
+      }
+
+      if (files?.newdesktop?.[0]?.filename) {
+        await removeImage({
+          imgpath: `/uploads/category/${files.newdesktop[0].filename}`,
+        });
+      }
+
+      if (files?.newmobile?.[0]?.filename) {
+        await removeImage({
+          imgpath: `/uploads/category/${files.newmobile[0].filename}`,
+        });
       }
 
       return res.status(404).json({
@@ -173,27 +215,70 @@ export const EditCategory = async(req:Request,res:Response)=>{
       });
     }
 
-    if (name?.trim()) {
+    // -------------------------
+    // Update name
+    // -------------------------
+
+    if (typeof name === "string" && name.trim()) {
       category.name = name.trim();
     }
 
-    if (newImage) {
-      const oldImage = category.image;
-      category.image = newImage;
+    // -------------------------
+    // New category image
+    // -------------------------
 
-      await category.save();
+    if (files?.newimage?.[0]?.filename) {
+      const newImage = `/uploads/category/${files.newimage[0].filename}`;
 
-      // Remove old image only after successful database update
-      if (oldImage) {
-        try {
-          await removeImage({ imgpath: oldImage });
-        } catch (error) {
-          console.error("Unable to remove old category image:", error);
-        }
+      // Delete old image
+      if (category.image) {
+        await removeImage({
+          imgpath: category.image,
+        });
       }
-    } else {
-      await category.save();
+
+      // Save new image
+      category.image = newImage;
     }
+
+    // -------------------------
+    // New desktop image
+    // -------------------------
+
+    if (files?.newdesktop?.[0]?.filename) {
+      const newDesktop = `/uploads/category/${files.newdesktop[0].filename}`;
+
+      // Delete old desktop image
+      if (category.desktop) {
+        await removeImage({
+          imgpath: category.desktop,
+        });
+      }
+
+      // Save new desktop image
+      category.desktop = newDesktop;
+    }
+
+    // -------------------------
+    // New mobile image
+    // -------------------------
+
+    if (files?.newmobile?.[0]?.filename) {
+      const newMobile = `/uploads/category/${files.newmobile[0].filename}`;
+
+      // Delete old mobile image
+      if (category.mobile) {
+        await removeImage({
+          imgpath: category.mobile,
+        });
+      }
+
+      // Save new mobile image
+      category.mobile = newMobile;
+    }
+
+    // Save category
+    await category.save();
 
     return res.status(200).json({
       success: true,
@@ -201,17 +286,33 @@ export const EditCategory = async(req:Request,res:Response)=>{
       category,
     });
   } catch (error) {
-    
-    if (newImage) {
-      try {
-        await removeImage({ imgpath: newImage });
-      } catch (removeError) {
-        console.error("Unable to remove uploaded image:", removeError);
-      }
+    console.error("Edit Category Error:", error);
+
+    // If DB update fails, remove newly uploaded files
+    if (files?.newimage?.[0]?.filename) {
+      await removeImage({
+        imgpath: `/uploads/category/${files.newimage[0].filename}`,
+      });
     }
 
-  return res.status(500).json({
-    success:false, message:error
-  })
+    if (files?.newdesktop?.[0]?.filename) {
+      await removeImage({
+        imgpath: `/uploads/category/${files.newdesktop[0].filename}`,
+      });
+    }
+
+    if (files?.newmobile?.[0]?.filename) {
+      await removeImage({
+        imgpath: `/uploads/category/${files.newmobile[0].filename}`,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to update category",
+    });
   }
-}
+};

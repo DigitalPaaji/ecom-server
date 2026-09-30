@@ -271,7 +271,8 @@ try {
       audience: process.env.GOOGLE_CLIENT_ID,
     });
 const payload = ticket.getPayload();
-    const { email, name } = payload as any;
+console.log(payload)
+    const { email, name} = payload as any;
  
         let user = await User.findOne({ email });
 

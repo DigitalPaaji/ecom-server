@@ -25,8 +25,9 @@ export const createProduct = async (req: Request, res: Response) => {
       isTopImage,
       details
     } = req.body;
-
-    if (!name || !description || !category) {
+   let parsedCategory: string[] =[ ]
+   if (category) parsedCategory = JSON.parse(category);
+    if (!name || !description || !parsedCategory.length ) {
       return res.status(400).json({
         message: "Name, Description, and Category are required",
       });
@@ -51,10 +52,12 @@ export const createProduct = async (req: Request, res: Response) => {
     // -------- Parse JSON fields --------
     let parsedTags: string[] = [];
     let parsedSeo: any = {};
-
+  
+     
     try {
       if (tags) parsedTags = JSON.parse(tags);
       if (seo) parsedSeo = JSON.parse(seo);
+      
     } catch {
       return res
         .status(400)
@@ -81,7 +84,7 @@ export const createProduct = async (req: Request, res: Response) => {
       description,
       shortDescription,
       thumbnail,
-      category,
+      category:parsedCategory,
       tags: parsedTags,
       seo: parsedSeo,
       images,
@@ -95,14 +98,18 @@ export const createProduct = async (req: Request, res: Response) => {
     });
 
 
-    const findCaegory = await Category.findById(category)
-      if(!findCaegory){
-        return res.status(401).json({success:false})
+       await Category.updateMany(
+      {
+        _id: {
+          $in: parsedCategory,
+        },
+      },
+      {
+        $addToSet: {
+          product: product._id,
+        },
       }
-   
-findCaegory.product.push(product._id as Types.ObjectId);
-
-    await findCaegory.save()
+    );
 
     return res.status(201).json({
       success: true,
@@ -139,7 +146,7 @@ export const getProduts = async (req: Request, res: Response) => {
             $regex: search,
             $options: "i",
           },
-        },
+        }, 
         {
           shortDescription: {
             $regex: search,
@@ -159,7 +166,7 @@ export const getProduts = async (req: Request, res: Response) => {
         )
         .populate("category"),
 
-      // Important: use the same filter here
+     
       Product.countDocuments(filter),
     ]);
 
@@ -201,22 +208,21 @@ export const deleteProduct = async (req: Request, res: Response) => {
 
 
 
-
-    // 3️⃣ Find the category
-    const category = await Category.findById(product.category);
-    if (!category) {
-      return res.status(404).json({ success: false, message: "Category not found" });
+ if (product.category?.length > 0) {
+      await Category.updateMany(
+        {
+          _id: {
+            $in: product.category,
+          },
+        },
+        {
+          $pull: {
+            product: product._id,
+          },
+        }
+      );
     }
 
-   
-    category.product = category.product.filter(
-      item => item.toString() !== product._id.toString()
-    );
-    await Promise.all(
-        product.images.map((item) => removeImage({ imgpath: item }))
-    )
-    
-    await category.save();
 
    
     await product.deleteOne();
@@ -272,110 +278,350 @@ product = await Product.findOne({ slug })
   }
 };
 
-export const updateProduct = async(req: Request, res: Response)=>{
-try {
-  const slug = req.params.slug
-  const product = await Product.findOne({slug});
+export const updateProduct = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { slug } = req.params;
 
-  if(!product){
-       return res.status(404).json({ message: "Product not found" });
+    const product = await Product.findOne({ slug });
 
-  }
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
 
-  const {name,isTop,isTopImage,description,shortDescription,category,tags,isFeatured,isNewArrived,isBestSaller,isActive,seo,deleteImg,details,variants} = req.body;
+    const {
+      name,
+      isTop,
+      isTopImage,
+      description,
+      shortDescription,
+      category,
+      tags,
+      isFeatured,
+      isNewArrived,
+      isBestSaller,
+      isActive,
+      seo,
+      deleteImg,
+      details,
+      variants,
+    } = req.body;
 
-    const parsedSeo = seo ? JSON.parse(seo) : {};
-    const parsedTags = tags ? JSON.parse(tags) : [];
-    const deletimgArry: string[] = deleteImg ? JSON.parse(deleteImg) : [];
-    const parseddetails = details? JSON.parse(details) : {};
-    product.name = name;
-    product.description = description;
-    product.shortDescription = shortDescription;
+    // ==========================================
+    // Parse JSON fields
+    // ==========================================
+
+    let parsedSeo: any = {};
+    let parsedTags: string[] = [];
+    let deleteImgArray: string[] = [];
+    let parsedDetails: any = {};
+    let parsedCategory: string[] = [];
+    let parsedVariants: any[] = [];
+
+    try {
+      if (seo) {
+        parsedSeo =
+          typeof seo === "string"
+            ? JSON.parse(seo)
+            : seo;
+      }
+
+      if (tags) {
+        parsedTags =
+          typeof tags === "string"
+            ? JSON.parse(tags)
+            : tags;
+      }
+
+      if (deleteImg) {
+        deleteImgArray =
+          typeof deleteImg === "string"
+            ? JSON.parse(deleteImg)
+            : deleteImg;
+      }
+
+      if (details) {
+        parsedDetails =
+          typeof details === "string"
+            ? JSON.parse(details)
+            : details;
+      }
+
+      if (category) {
+        parsedCategory =
+          typeof category === "string"
+            ? JSON.parse(category)
+            : category;
+      }
+
+      if (variants) {
+        parsedVariants =
+          typeof variants === "string"
+            ? JSON.parse(variants)
+            : variants;
+      }
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid JSON in category, tags, seo, details, variants or deleteImg",
+      });
+    }
+
+    // ==========================================
+    // Validate category
+    // ==========================================
+
+    if (
+      !Array.isArray(parsedCategory) ||
+      parsedCategory.length === 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one category is required",
+      });
+    }
+
+    // Remove duplicate category IDs
+    parsedCategory = [...new Set(parsedCategory)];
+
+    // ==========================================
+    // Validate categories exist
+    // ==========================================
+
+    const categories = await Category.find({
+      _id: {
+        $in: parsedCategory,
+      },
+    });
+
+    if (categories.length !== parsedCategory.length) {
+      return res.status(404).json({
+        success: false,
+        message: "One or more categories not found",
+      });
+    }
+
+    // ==========================================
+    // Update product basic information
+    // ==========================================
+
+    if (typeof name === "string") {
+      product.name = name.trim();
+    }
+
+    if (description !== undefined) {
+      product.description = description;
+    }
+
+    if (shortDescription !== undefined) {
+      product.shortDescription = shortDescription;
+    }
 
     product.seo = parsedSeo;
-    product.isFeatured = isFeatured ?? product.isFeatured;
-    product.isNewArrived = isNewArrived ?? product.isNewArrived;
-    product.isBestSaller = isBestSaller ?? product.isBestSaller;
-    product.isTop = isTop ?? product.isTop;
-    product.isTopImage = Number(isTopImage)  || null;
 
-    product.isActive = isActive ?? product.isActive;
     product.tags = parsedTags;
-    product.details = parseddetails;
-// let deletimgArry = JSON.parse(deleteImg) as string[];
-    product.variants= JSON.parse(variants) 
-   if (Array.isArray(deletimgArry) && deletimgArry.length > 0) {
-      await Promise.all(
-        deletimgArry.map((item) => removeImage({ imgpath: item }))
-      ); 
-    product.images = product.images.filter(
-        (img) => !deletimgArry.includes(img)
 
+    product.details = parsedDetails;
+
+    product.variants = parsedVariants;
+
+    product.isFeatured =
+      isFeatured ?? product.isFeatured;
+
+    product.isNewArrived =
+      isNewArrived ?? product.isNewArrived;
+
+    product.isBestSaller =
+      isBestSaller ?? product.isBestSaller;
+
+    product.isTop =
+      isTop ?? product.isTop;
+
+    product.isTopImage =
+      isTopImage !== undefined
+        ? Number(isTopImage) || null
+        : product.isTopImage;
+
+    product.isActive =
+      isActive ?? product.isActive;
+
+    // ==========================================
+    // Delete selected old images
+    // ==========================================
+
+    if (
+      Array.isArray(deleteImgArray) &&
+      deleteImgArray.length > 0
+    ) {
+      await Promise.all(
+        deleteImgArray.map((img) =>
+          removeImage({
+            imgpath: img,
+          })
+        )
+      );
+
+      product.images = product.images.filter(
+        (img) => !deleteImgArray.includes(img)
       );
     }
 
+    // ==========================================
+    // Files
+    // ==========================================
 
-const files= req.files as {
-  newthumbnail: Express.Multer.File[],
-  newimage: Express.Multer.File[],
+    const files = req.files as {
+      newthumbnail?: Express.Multer.File[];
+      newimage?: Express.Multer.File[];
+    };
 
-}
+    // ==========================================
+    // Replace thumbnail
+    // ==========================================
 
-if (files.newthumbnail?.[0]) {
-  await removeImage({ imgpath: product.thumbnail });
+    if (files?.newthumbnail?.[0]) {
+      // Delete old thumbnail
+      if (product.thumbnail) {
+        await removeImage({
+          imgpath: product.thumbnail,
+        });
+      }
 
-  product.thumbnail = `/uploads/product/${files.newthumbnail[0].filename}`;
-}
+      // Save new thumbnail
+      product.thumbnail =
+        `/uploads/product/${files.newthumbnail[0].filename}`;
+    }
 
+    // ==========================================
+    // Add new product images
+    // ==========================================
 
-
-   const newImages = (files.newimage )?.map(
-        (file) => `/uploads/product/${file.filename}`
+    const newImages =
+      files?.newimage?.map(
+        (file) =>
+          `/uploads/product/${file.filename}`
       ) || [];
 
     if (newImages.length > 0) {
-      product.images = [...product.images, ...newImages];
+      product.images = [
+        ...product.images,
+        ...newImages,
+      ];
     }
 
-if(category && category.toString() !== product.category.toString()){
+    // ==========================================
+    // CATEGORY SYNCHRONIZATION
+    // ==========================================
 
-  const oldCat = await Category.findById(product.category);
-if (!oldCat) {
-    return res.status(404).json({ message: "Old category not found" });
-  }
+    const oldCategories =
+      product.category?.map((id) =>
+        id.toString()
+      ) || [];
 
+    const newCategories =
+      parsedCategory.map((id) =>
+        id.toString()
+      );
 
- oldCat.product = oldCat.product.filter(
-  (item) => item.toString() !== product._id.toString()
-);
-  const newCat = await Category.findById(category);
-   if (!newCat) {
-    return res.status(404).json({ message: "New category not found" });
-  }
- if (!newCat.product.includes(product._id)) {
-    newCat.product.push(product._id);
-  }
-  await Promise.all([oldCat.save(), newCat.save()]);
+    // Categories that were removed
+    const removedCategories =
+      oldCategories.filter(
+        (id) => !newCategories.includes(id)
+      );
 
-product.category= category;
+    // Categories that were newly added
+    const addedCategories =
+      newCategories.filter(
+        (id) => !oldCategories.includes(id)
+      );
 
+    // ------------------------------------------
+    // Remove product from removed categories
+    // ------------------------------------------
 
+    if (removedCategories.length > 0) {
+      await Category.updateMany(
+        {
+          _id: {
+            $in: removedCategories,
+          },
+        },
+        {
+          $pull: {
+            product: product._id,
+          },
+        }
+      );
+    }
 
-}
+    // ------------------------------------------
+    // Add product to newly added categories
+    // ------------------------------------------
 
+    if (addedCategories.length > 0) {
+      await Category.updateMany(
+        {
+          _id: {
+            $in: addedCategories,
+          },
+        },
+        {
+          $addToSet: {
+            product: product._id,
+          },
+        }
+      );
+    }
+
+    // ------------------------------------------
+    // Make sure product exists in ALL new categories
+    // ------------------------------------------
+
+    await Category.updateMany(
+      {
+        _id: {
+          $in: newCategories,
+        },
+      },
+      {
+        $addToSet: {
+          product: product._id,
+        },
+      }
+    );
+
+    // Update product category array
+    product.category = parsedCategory as any;
+
+    // ==========================================
+    // Save product
+    // ==========================================
 
     await product.save();
 
     return res.status(200).json({
+      success: true,
       message: "Product updated successfully",
       product,
     });
+  } catch (error: any) {
+    console.error(
+      "Update Product Error:",
+      error
+    );
 
-} catch (error : any) {
-  console.log(error.message)
-      return res.status(500).json({ message: "Server Error" });
-}
-}
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
 
 
 export const SearchProduct = async(req: Request, res: Response)=>{
@@ -423,7 +669,7 @@ const products = await Product.find({
   },
    shortDescription: {
             $regex: safeSearch,
-            $options: "i",
+            $options: "i",  
           },
    slug: {
             $regex: safeSearch,

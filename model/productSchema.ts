@@ -30,7 +30,7 @@ export interface IProduct extends Document {
   slug: string;
   description: string;
   shortDescription?: string;
-  category: mongoose.Types.ObjectId; 
+  category: mongoose.Types.ObjectId[]; 
   tags?: string[];
   isFeatured: boolean;
   isNewArrived: boolean;
@@ -92,11 +92,11 @@ const ProductSchema: Schema<IProduct> = new Schema(
       maxlength: 200 
     },
 
-    category: { 
+    category: [{ 
       type: Schema.Types.ObjectId, 
       ref: 'category', 
       required: true 
-    },
+    }],
     tags: [String],
     isFeatured: { type: Boolean, default: false },
     isNewArrived: { type: Boolean, default: false },
